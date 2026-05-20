@@ -1,0 +1,502 @@
+/* ==========================================================================
+   CyberGuard AI — Premium Modern Security Dashboard Stylesheet
+   Compatible: Streamlit local + Streamlit Community Cloud
+   ========================================================================== */
+
+/* ---------- CSS Variables ---------- */
+:root {
+    --cg-bg-primary: #0a0e17;
+    --cg-bg-secondary: #111827;
+    --cg-bg-card: rgba(17, 24, 39, 0.75);
+    --cg-blue-neon: #3b82f6;
+    --cg-blue-electric: #60a5fa;
+    --cg-blue-glow: rgba(59, 130, 246, 0.35);
+    --cg-accent: #2563eb;
+    --cg-text-primary: #f1f5f9;
+    --cg-text-muted: #94a3b8;
+    --cg-border: rgba(59, 130, 246, 0.2);
+    --cg-success: #10b981;
+    --cg-warning: #f59e0b;
+    --cg-danger: #ef4444;
+    --cg-radius: 12px;
+    --cg-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ---------- Global App Background ---------- */
+.stApp {
+    background: linear-gradient(160deg, #0a0e17 0%, #0f172a 40%, #111827 100%) !important;
+    color: var(--cg-text-primary) !important;
+}
+
+/* Hide default Streamlit header/footer for cleaner look */
+header[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+footer {
+    visibility: hidden;
+}
+
+/* ---------- Sidebar Styling ---------- */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0a0e17 0%, #111827 100%) !important;
+    border-right: 1px solid var(--cg-border) !important;
+}
+
+section[data-testid="stSidebar"] .stMarkdown h1,
+section[data-testid="stSidebar"] .stMarkdown h2,
+section[data-testid="stSidebar"] .stMarkdown h3 {
+    color: var(--cg-text-primary) !important;
+}
+
+section[data-testid="stSidebar"] hr {
+    border-color: var(--cg-border) !important;
+}
+
+/* ---------- Hero / Welcome Section ---------- */
+.cg-hero {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    margin-bottom: 1.5rem;
+    border-radius: var(--cg-radius);
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.15) 0%, rgba(17, 24, 39, 0.8) 100%);
+    border: 1px solid var(--cg-border);
+    box-shadow: var(--cg-shadow), 0 0 40px var(--cg-blue-glow);
+    animation: cg-fadeIn 0.8s ease-out;
+}
+
+.cg-hero-icon {
+    font-size: 3.5rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 0 20px var(--cg-blue-glow));
+}
+
+.cg-hero h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #60a5fa, #3b82f6, #93c5fd);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0.5rem 0;
+    letter-spacing: -0.5px;
+}
+
+.cg-hero p {
+    color: var(--cg-text-muted);
+    font-size: 1.05rem;
+    max-width: 600px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ---------- Glass Card ---------- */
+.cg-card {
+    background: var(--cg-bg-card);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--cg-border);
+    border-radius: var(--cg-radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--cg-shadow);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    animation: cg-slideUp 0.5s ease-out;
+}
+
+.cg-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cg-shadow), 0 0 24px var(--cg-blue-glow);
+}
+
+.cg-card h3 {
+    color: var(--cg-blue-electric) !important;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+
+.cg-card p,
+.cg-card li {
+    color: var(--cg-text-muted) !important;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+/* ---------- Metric Cards ---------- */
+.cg-metric {
+    background: linear-gradient(145deg, rgba(37, 99, 235, 0.12), rgba(17, 24, 39, 0.9));
+    border: 1px solid var(--cg-border);
+    border-radius: var(--cg-radius);
+    padding: 1.2rem;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    animation: cg-fadeIn 0.6s ease-out;
+}
+
+.cg-metric:hover {
+    border-color: var(--cg-blue-neon);
+    box-shadow: 0 0 20px var(--cg-blue-glow);
+}
+
+.cg-metric-icon {
+    font-size: 2rem;
+    margin-bottom: 0.4rem;
+}
+
+.cg-metric-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--cg-blue-electric) !important;
+}
+
+.cg-metric-label {
+    font-size: 0.8rem;
+    color: var(--cg-text-muted) !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+/* ---------- Status Badges ---------- */
+.cg-badge {
+    display: inline-block;
+    padding: 0.35rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.3px;
+}
+
+.cg-badge-safe {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.cg-badge-suspicious {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.cg-badge-danger {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.cg-badge-strong {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399 !important;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.cg-badge-medium {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24 !important;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.cg-badge-weak {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171 !important;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* ---------- Chat Messages ---------- */
+.cg-chat-user {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(37, 99, 235, 0.1));
+    border: 1px solid var(--cg-border);
+    border-radius: var(--cg-radius) var(--cg-radius) 4px var(--cg-radius);
+    padding: 0.85rem 1.1rem;
+    margin: 0.5rem 0 0.5rem 2rem;
+    color: var(--cg-text-primary) !important;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    animation: cg-slideUp 0.3s ease-out;
+}
+
+.cg-chat-assistant {
+    background: var(--cg-bg-card);
+    border: 1px solid var(--cg-border);
+    border-radius: var(--cg-radius) var(--cg-radius) var(--cg-radius) 4px;
+    padding: 0.85rem 1.1rem;
+    margin: 0.5rem 2rem 0.5rem 0;
+    color: var(--cg-text-primary) !important;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    box-shadow: 0 0 16px var(--cg-blue-glow);
+    animation: cg-slideUp 0.3s ease-out;
+}
+
+.cg-chat-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cg-blue-electric) !important;
+    margin-bottom: 0.3rem;
+}
+
+/* ---------- Feature Grid ---------- */
+.cg-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+/* ---------- Tips Box ---------- */
+.cg-tip-box {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(17, 24, 39, 0.8));
+    border-left: 3px solid var(--cg-blue-neon);
+    border-radius: 0 var(--cg-radius) var(--cg-radius) 0;
+    padding: 1rem 1.25rem;
+    margin: 0.75rem 0;
+    color: var(--cg-text-primary) !important;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    animation: cg-fadeIn 0.5s ease-out;
+}
+
+/* ---------- Progress Bar Custom ---------- */
+.cg-progress-track {
+    background: rgba(30, 41, 59, 0.8);
+    border-radius: 8px;
+    height: 8px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.cg-progress-fill {
+    height: 100%;
+    border-radius: 8px;
+    transition: width 0.6s ease;
+}
+
+.cg-progress-weak { background: linear-gradient(90deg, #ef4444, #f87171); }
+.cg-progress-medium { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.cg-progress-strong { background: linear-gradient(90deg, #10b981, #34d399); }
+
+/* ---------- Section Title ---------- */
+.cg-section-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--cg-text-primary) !important;
+    margin: 1.5rem 0 0.75rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--cg-border);
+}
+
+.cg-section-title span {
+    color: var(--cg-blue-electric) !important;
+}
+
+/* ---------- Quick Start Steps ---------- */
+.cg-steps {
+    counter-reset: step-counter;
+    list-style: none;
+    padding: 0;
+}
+
+.cg-steps li {
+    counter-increment: step-counter;
+    padding: 0.6rem 0 0.6rem 2.5rem;
+    position: relative;
+    color: var(--cg-text-muted) !important;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.cg-steps li::before {
+    content: counter(step-counter);
+    position: absolute;
+    left: 0;
+    top: 0.5rem;
+    width: 1.6rem;
+    height: 1.6rem;
+    background: var(--cg-accent);
+    color: white;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px var(--cg-blue-glow);
+}
+
+/* ---------- Sidebar Logo ---------- */
+.cg-sidebar-logo {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.cg-sidebar-logo .logo-icon {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 0 12px var(--cg-blue-glow));
+}
+
+.cg-sidebar-logo h2 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: linear-gradient(90deg, #60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0.3rem 0 0;
+}
+
+.cg-sidebar-logo .tagline {
+    font-size: 0.72rem;
+    color: var(--cg-text-muted) !important;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+/* ---------- Security Status Indicator ---------- */
+.cg-status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    animation: cg-pulse 2s infinite;
+}
+
+.cg-status-active {
+    background: var(--cg-success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+/* ---------- Finding List ---------- */
+.cg-finding {
+    padding: 0.5rem 0.75rem;
+    margin: 0.35rem 0;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.5);
+    border-left: 2px solid var(--cg-blue-neon);
+    color: var(--cg-text-muted) !important;
+    font-size: 0.88rem;
+}
+
+/* ---------- Animations ---------- */
+@keyframes cg-fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes cg-slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes cg-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* ---------- Streamlit Component Overrides ---------- */
+.stButton > button {
+    background: linear-gradient(135deg, #2563eb, #3b82f6) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 0.5rem 1.5rem !important;
+    transition: all 0.25s ease !important;
+    box-shadow: 0 4px 15px var(--cg-blue-glow) !important;
+}
+
+.stButton > button:hover {
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5) !important;
+    transform: translateY(-1px);
+}
+
+div[data-testid="stMetric"] {
+    background: var(--cg-bg-card) !important;
+    border: 1px solid var(--cg-border) !important;
+    border-radius: var(--cg-radius) !important;
+    padding: 0.75rem !important;
+}
+
+div[data-testid="stMetric"] label {
+    color: var(--cg-text-muted) !important;
+}
+
+div[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    color: var(--cg-blue-electric) !important;
+}
+
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+    background: rgba(17, 24, 39, 0.8) !important;
+    border: 1px solid var(--cg-border) !important;
+    color: var(--cg-text-primary) !important;
+    border-radius: 8px !important;
+}
+
+.stSelectbox > div > div {
+    background: rgba(17, 24, 39, 0.8) !important;
+    border-color: var(--cg-border) !important;
+}
+
+/* ---------- Responsive Design ---------- */
+@media (max-width: 768px) {
+    .cg-hero {
+        padding: 1.5rem 1rem;
+    }
+
+    .cg-hero h1 {
+        font-size: 1.6rem;
+    }
+
+    .cg-hero-icon {
+        font-size: 2.5rem;
+    }
+
+    .cg-chat-user {
+        margin-left: 0.5rem;
+    }
+
+    .cg-chat-assistant {
+        margin-right: 0.5rem;
+    }
+
+    .cg-metric {
+        padding: 0.9rem;
+    }
+
+    .cg-metric-value {
+        font-size: 1.3rem;
+    }
+
+    .cg-feature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .cg-card {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .cg-hero h1 {
+        font-size: 1.35rem;
+    }
+
+    .cg-hero p {
+        font-size: 0.9rem;
+    }
+
+    .cg-section-title {
+        font-size: 1.15rem;
+    }
+}
