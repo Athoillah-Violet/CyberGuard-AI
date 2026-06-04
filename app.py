@@ -277,6 +277,110 @@ def render_dashboard() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Website Security Check (embedded in AI Chatbot page)
+# ---------------------------------------------------------------------------
+
+def render_website_security_result(result: dict) -> None:
+    """
+    Menampilkan hasil analisis URL dari fms.analyze_url().
+
+    Args:
+        result: Dict berisi status, risk_score, findings, summary, url_checked.
+    """
+    status = result.get("status", "Suspicious")
+    risk_score = result.get("risk_score", 0)
+    summary = result.get("summary", "")
+    findings = result.get("findings", [])
+    url_checked = result.get("url_checked", "")
+
+    risk_level = "strong" if risk_score < 30 else ("medium" if risk_score < 60 else "weak")
+
+    st.markdown(
+        f"""
+        <div class="cg-websec-result">
+            <div class="cg-websec-result-header">
+                <span>Hasil Analisis</span>
+                {render_badge(status)}
+            </div>
+            <div class="cg-websec-metrics">
+                <div class="cg-websec-metric">
+                    <span class="cg-websec-metric-label">Risk Score</span>
+                    <span class="cg-websec-metric-value">{risk_score}/100</span>
+                </div>
+            </div>
+            <div class="cg-websec-risk-label">Tingkat risiko</div>
+            {render_progress_bar(risk_score, "Strong" if risk_level == "strong" else ("Medium" if risk_level == "medium" else "Weak"))}
+            <div class="cg-websec-summary">
+                <span class="cg-websec-summary-label">Ringkasan</span>
+                <p>{summary}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if findings:
+        st.markdown("##### 🔎 Temuan Analisis")
+        for finding in findings:
+            st.markdown(
+                f'<div class="cg-finding cg-websec-finding">⚠️ {finding}</div>',
+                unsafe_allow_html=True,
+            )
+
+    if url_checked:
+        st.markdown(
+            f'<p class="cg-websec-url-checked">URL diperiksa: {url_checked}</p>',
+            unsafe_allow_html=True,
+        )
+
+
+def render_website_security_check() -> None:
+    """
+    Merender section Website Security Check pada halaman AI Chatbot.
+    Menggunakan fms.analyze_url() untuk analisis heuristik URL.
+    """
+    st.markdown(
+        '<div class="cg-section-title cg-websec-section-title">'
+        '🌐 <span>Website Security Check</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="cg-card cg-websec-card">
+            <p>Periksa keamanan website secara instan — deteksi indikasi phishing
+            tanpa perlu chat terlebih dahulu. Analisis berbasis heuristik;
+            verifikasi manual tetap disarankan.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="cg-websec-input-area"></div>', unsafe_allow_html=True)
+
+    websec_url = st.text_input(
+        "URL Website",
+        placeholder="Masukkan URL website yang ingin dianalisis...",
+        key="websec_url_input",
+        label_visibility="collapsed",
+    )
+
+    analyze_clicked = st.button(
+        "🔍 Analisis Website",
+        key="websec_analyze_btn",
+        use_container_width=True,
+    )
+
+    if analyze_clicked:
+        if not websec_url or not websec_url.strip():
+            st.warning("Masukkan URL terlebih dahulu.")
+        else:
+            with st.spinner("Menganalisis keamanan website..."):
+                result = fms.analyze_url(websec_url)
+            render_website_security_result(result)
+
+
+# ---------------------------------------------------------------------------
 # AI Chatbot Page
 # ---------------------------------------------------------------------------
 
@@ -295,6 +399,10 @@ def render_chatbot() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+    render_website_security_check()
+
+    st.markdown("---")
 
     if not st.session_state.chat_initialized:
         st.session_state.chat_history.append({
