@@ -47,6 +47,94 @@ st.set_page_config(
 # Load Custom CSS (path relatif — kompatibel Streamlit Cloud)
 # ---------------------------------------------------------------------------
 
+_LIGHT_THEME_CSS = """
+:root {
+    --cg-bg-primary: #f8fafc;
+    --cg-bg-secondary: #f1f5ff;
+    --cg-bg-card: rgba(255, 255, 255, 0.92);
+    --cg-blue-neon: #0ea5e9;
+    --cg-blue-electric: #2563eb;
+    --cg-blue-glow: rgba(14, 165, 233, 0.18);
+    --cg-accent: #2563eb;
+    --cg-text-primary: #0b1220;
+    --cg-text-muted: #64748b;
+    --cg-border: rgba(37, 99, 235, 0.14);
+    --cg-shadow: 0 10px 26px rgba(15, 23, 42, 0.10);
+}
+
+.stApp {
+    background: radial-gradient(900px circle at 20% 0%, rgba(14, 165, 233, 0.16), transparent 55%),
+        radial-gradient(900px circle at 80% 20%, rgba(37, 99, 235, 0.12), transparent 50%),
+        linear-gradient(160deg, #f8fafc 0%, #f1f5ff 40%, #ffffff 100%) !important;
+    color: var(--cg-text-primary) !important;
+}
+
+section[data-testid="stSidebar"] {
+    background: radial-gradient(500px circle at 30% 0%, rgba(14, 165, 233, 0.12), transparent 55%),
+        linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%) !important;
+    border-right: 1px solid var(--cg-border) !important;
+}
+
+.cg-sidebar-deco {
+    background: linear-gradient(160deg, rgba(14, 165, 233, 0.10), rgba(255, 255, 255, 0.95)) !important;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08) !important;
+}
+
+.cg-onboarding-card {
+    background: linear-gradient(160deg, rgba(14, 165, 233, 0.10), rgba(255, 255, 255, 0.95)) !important;
+    box-shadow: var(--cg-shadow), 0 0 24px var(--cg-blue-glow) !important;
+}
+
+.cg-hero {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.14) 0%, rgba(255, 255, 255, 0.96) 100%) !important;
+    box-shadow: var(--cg-shadow), 0 0 22px var(--cg-blue-glow) !important;
+}
+
+.cg-metric {
+    background: linear-gradient(145deg, rgba(14, 165, 233, 0.08), rgba(255, 255, 255, 0.96)) !important;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08) !important;
+}
+
+.cg-chat-user {
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.16), rgba(37, 99, 235, 0.06)) !important;
+}
+
+.cg-chat-assistant {
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+}
+
+.cg-scan-result,
+.cg-websec-result {
+    background: linear-gradient(145deg, rgba(14, 165, 233, 0.10), rgba(255, 255, 255, 0.96)) !important;
+    box-shadow: var(--cg-shadow), 0 0 18px var(--cg-blue-glow) !important;
+}
+
+.cg-scan-metric,
+.cg-websec-metric {
+    background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.stTextInput > div > div > input,
+.stTextArea > div > div > textarea {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--cg-text-primary) !important;
+}
+
+.stSelectbox > div > div {
+    background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.stButton > button {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.20) !important;
+}
+
+.stButton > button:hover {
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.28) !important;
+}
+"""
+
+
 def load_css() -> None:
     """
     Memuat file style.css ke halaman Streamlit.
@@ -57,7 +145,11 @@ def load_css() -> None:
     css_path = Path(__file__).parent / "style.css"
     if css_path.exists():
         with open(css_path, "r", encoding="utf-8") as f:
-            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+            theme = st.session_state.get("theme", "dark")
+            css = f.read()
+            if theme == "light":
+                css += _LIGHT_THEME_CSS
+            st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 
 load_css()
@@ -81,6 +173,13 @@ def init_session_state() -> None:
     # State navigasi halaman
     if "current_page" not in st.session_state:
         st.session_state.current_page = "Dashboard"
+
+    if "theme" not in st.session_state:
+        st.session_state.theme = "dark"
+    if "cg_theme_toggle" not in st.session_state:
+        st.session_state.cg_theme_toggle = st.session_state.theme == "light"
+    else:
+        st.session_state.theme = "light" if st.session_state.cg_theme_toggle else "dark"
 
     # State onboarding — muncul sekali per sesi browser
     if "onboarding_done" not in st.session_state:
@@ -110,6 +209,10 @@ def navigate_to(page: str) -> None:
     if page in VALID_PAGES:
         st.session_state.current_page = page
         st.rerun()
+
+
+def sync_theme() -> None:
+    st.session_state.theme = "light" if st.session_state.get("cg_theme_toggle") else "dark"
 
 
 def render_badge(level: str) -> str:
@@ -457,11 +560,15 @@ def render_sidebar() -> str:
 
         st.markdown("---")
 
+        st.markdown("##### 🎨 Tema")
+        st.toggle("🌞 Tema Terang", key="cg_theme_toggle", on_change=sync_theme)
+        st.markdown("---")
+
         # Informasi singkat aplikasi
         st.markdown("##### ℹ️ About")
         st.markdown(
             """
-            <p style="font-size:0.78rem;color:#64748b;line-height:1.5;">
+            <p style="font-size:0.78rem;color:var(--cg-text-muted);line-height:1.5;">
             <b>CyberGuard AI</b> v1.1<br>
             Edukasi &amp; awareness keamanan siber.<br><br>
             <i>Bukan tools hacking.</i>
