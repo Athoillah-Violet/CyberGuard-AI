@@ -653,24 +653,18 @@ def render_chatbot() -> None:
     if user_input:
         send_chat_message(user_input)
 
-    # Tombol pertanyaan cepat
-    st.markdown("##### ⚡ Pertanyaan Cepat")
-    qcols = st.columns(2)
-    for i, question in enumerate(CHAT_QUICK_QUESTIONS):
-        with qcols[i % 2]:
-            if st.button(question, key=f"quick_{i}", use_container_width=True):
-                send_chat_message(question)
+    with st.expander("⚡ Pertanyaan Cepat", expanded=False):
+        qcols = st.columns(2)
+        for i, question in enumerate(CHAT_QUICK_QUESTIONS):
+            with qcols[i % 2]:
+                if st.button(question, key=f"quick_{i}", use_container_width=True):
+                    send_chat_message(question)
 
     # Tombol reset riwayat chat
     if st.button("🗑️ Hapus Riwayat Chat", key="clear_chat"):
         st.session_state.chat_history = []
         st.session_state.chat_initialized = False
         st.rerun()
-
-    st.markdown("---")
-
-    # Fitur tambahan: scan URL langsung dari halaman chatbot
-    render_website_security_check()
 
 
 # ---------------------------------------------------------------------------
