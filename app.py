@@ -134,6 +134,30 @@ div[data-testid="stChatInput"] textarea::placeholder {
     color: var(--cg-text-muted) !important;
 }
 
+div[data-testid="stChatInput"] {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid var(--cg-border) !important;
+    border-radius: 14px !important;
+    padding: 0.35rem 0.4rem !important;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.10) !important;
+}
+
+div[data-testid="stChatInput"] > div {
+    background: transparent !important;
+}
+
+div[data-testid="stChatInput"] button {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+}
+
+div[data-testid="stBottomBlockContainer"],
+div[data-testid="stBottom"] {
+    background: transparent !important;
+}
+
 div[data-testid="stExpander"] details {
     background: rgba(255, 255, 255, 0.92) !important;
     border: 1px solid var(--cg-border) !important;
