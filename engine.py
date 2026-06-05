@@ -1,21 +1,17 @@
 """
 engine.py — AI Engine Module
-Mengatur logika chatbot AI CyberGuard berbasis keyword matching.
-Struktur siap dikembangkan ke OpenAI API di masa depan.
+Modul chatbot AI Cyber Security dengan placeholder response.
+Struktur siap dikembangkan ke OpenAI API.
 """
 
-# Import typing untuk tipe data dictionary, list, dan optional
 from typing import Dict, List, Optional
 
 
-# =========================================================
-# KNOWLEDGE BASE
-# =========================================================
-# Menyimpan seluruh respons AI berdasarkan topik cyber security
+# ---------------------------------------------------------------------------
+# Knowledge Base — Respons berbasis keyword (placeholder AI)
+# ---------------------------------------------------------------------------
 
 _KNOWLEDGE_BASE: Dict[str, str] = {
-
-    # Respons AI tentang phishing
     "phishing": (
         "**Phishing** adalah serangan social engineering di mana penyerang "
         "menyamar sebagai entitas terpercaya (bank, perusahaan, teman) untuk "
@@ -31,8 +27,6 @@ _KNOWLEDGE_BASE: Dict[str, str] = {
         "3. Aktifkan 2FA di semua akun penting\n"
         "4. Laporkan email phishing ke provider email"
     ),
-
-    # Respons AI tentang malware
     "malware": (
         "**Malware** (malicious software) adalah program berbahaya yang dirancang "
         "untuk merusak, mencuri data, atau mengendalikan perangkat tanpa izin.\n\n"
@@ -47,8 +41,6 @@ _KNOWLEDGE_BASE: Dict[str, str] = {
         "- Jangan unduh dari sumber tidak dikenal\n"
         "- Scan USB/external drive sebelum dibuka"
     ),
-
-    # Respons AI tentang ransomware
     "ransomware": (
         "**Ransomware** mengenkripsi file korban dan meminta tebusan (biasanya "
         "cryptocurrency) untuk mengembalikan akses.\n\n"
@@ -62,8 +54,6 @@ _KNOWLEDGE_BASE: Dict[str, str] = {
         "- Patch sistem operasi secara rutin\n"
         "- Batasi privilege user di jaringan kantor"
     ),
-
-    # Respons AI tentang keamanan password
     "password": (
         "**Keamanan Password** adalah fondasi perlindungan digital Anda.\n\n"
         "**Best practices:**\n"
@@ -75,8 +65,6 @@ _KNOWLEDGE_BASE: Dict[str, str] = {
         "Gunakan fitur **Password Checker** di sidebar untuk menganalisis "
         "kekuatan password Anda secara real-time."
     ),
-
-    # Respons AI tentang social engineering
     "social engineering": (
         "**Social Engineering** mengeksploitasi psikologi manusia, bukan celah teknis.\n\n"
         "**Teknik umum:**\n"
@@ -89,179 +77,103 @@ _KNOWLEDGE_BASE: Dict[str, str] = {
         "- Jangan bagikan informasi sensitif via telepon/chat\n"
         "- Latih awareness security secara berkala"
     ),
-
-    # Respons AI tentang 2FA
     "2fa": (
         "**Two-Factor Authentication (2FA)** menambah lapisan keamanan di luar password.\n\n"
         "**Metode 2FA:**\n"
         "- SMS OTP (kurang aman, rentan SIM swap)\n"
-        "- Authenticator app (Google Authenticator, Authy) — disarankan\n"
+        "- Authenticator app (Google Authenticator, Authy) — **disarankan**\n"
         "- Hardware key (YubiKey) — paling aman\n"
         "- Biometric (sidik jari, face ID)\n\n"
-        "Aktifkan 2FA di semua akun penting."
+        "Aktifkan 2FA di: email, banking, social media, cloud storage, "
+        "dan semua akun yang menyimpan data sensitif."
     ),
-
-    # Respons AI tentang scam online
     "scam": (
         "**Scam & Penipuan Online** semakin canggih di era digital.\n\n"
         "**Red flags:**\n"
         "- Janji keuntungan tidak masuk akal\n"
-        "- Tekanan waktu untuk transfer uang\n"
+        "- Tekanan waktu (\"segera transfer sekarang!\")\n"
         "- Permintaan transfer ke rekening pribadi\n"
         "- Profil media sosial baru tanpa riwayat\n\n"
         "**Tips:**\n"
-        "- Verifikasi lewat website resmi\n"
-        "- Jangan transfer uang sembarangan"
+        "- Verifikasi lewat website/telepon resmi\n"
+        "- Jangan transfer uang ke orang tidak dikenal\n"
+        "- Laporkan ke platform dan kepolisian cyber"
     ),
-
-    # Respons AI tentang VPN
     "vpn": (
         "**VPN (Virtual Private Network)** mengenkripsi koneksi internet Anda.\n\n"
         "**Kapan menggunakan VPN:**\n"
-        "- Wi-Fi publik\n"
-        "- Remote work\n"
-        "- Menambah privasi online\n\n"
-        "Gunakan VPN terpercaya dengan kebijakan no-log."
+        "- Wi-Fi publik (kafe, bandara, hotel)\n"
+        "- Akses konten dengan privasi tambahan\n"
+        "- Remote work ke server perusahaan\n\n"
+        "**Pilih VPN terpercaya** — hindari VPN gratis yang menjual data. "
+        "Pastikan kebijakan no-log dan enkripsi AES-256."
     ),
-
-    # Respons AI tentang firewall
     "firewall": (
-        "**Firewall** adalah penghalang antara jaringan internal dan eksternal.\n\n"
-        "**Jenis firewall:**\n"
-        "- Network Firewall\n"
-        "- Host Firewall\n"
-        "- Web Application Firewall (WAF)\n\n"
-        "Pastikan firewall aktif di perangkat Anda."
+        "**Firewall** adalah barrier antara jaringan internal dan eksternal.\n\n"
+        "**Jenis:**\n"
+        "- **Network firewall** — melindungi seluruh jaringan\n"
+        "- **Host firewall** — melindungi perangkat individual (Windows Defender)\n"
+        "- **Web Application Firewall (WAF)** — melindungi aplikasi web\n\n"
+        "Pastikan firewall aktif di router, server, dan endpoint devices."
     ),
-
-    # Respons AI tentang enkripsi
     "encryption": (
         "**Enkripsi** mengubah data menjadi format yang tidak bisa dibaca "
         "tanpa kunci dekripsi.\n\n"
-        "**Jenis enkripsi:**\n"
-        "- Data at rest\n"
-        "- Data in transit\n\n"
-        "Selalu gunakan HTTPS saat memasukkan data sensitif."
+        "**Jenis:**\n"
+        "- **At rest** — data tersimpan (disk encryption, database)\n"
+        "- **In transit** — data dikirim (HTTPS/TLS, VPN)\n\n"
+        "Selalu pastikan website menggunakan **HTTPS** (gembok hijau di browser) "
+        "sebelum memasukkan data sensitif."
     ),
 }
 
 
-# =========================================================
-# KEYWORD MAP
-# =========================================================
-# Menghubungkan keyword user dengan topik tertentu
-
 _KEYWORD_MAP: Dict[str, List[str]] = {
-
-    # Keyword phishing
-    "phishing": [
-        "phishing",
-        "phish",
-        "email palsu",
-        "penipuan email"
-    ],
-
-    # Keyword malware
-    "malware": [
-        "malware",
-        "virus",
-        "trojan",
-        "spyware",
-        "adware",
-        "worm"
-    ],
-
-    # Keyword ransomware
-    "ransomware": [
-        "ransomware",
-        "ransom",
-        "tebusan",
-        "enkripsi file"
-    ],
-
-    # Keyword password
-    "password": [
-        "password",
-        "kata sandi",
-        "sandi",
-        "passphrase",
-        "credential"
-    ],
-
-    # Keyword social engineering
-    "social engineering": [
-        "social engineering",
-        "sosial engineering",
-        "manipulasi",
-        "penipuan"
-    ],
-
-    # Keyword 2FA
-    "2fa": [
-        "2fa",
-        "two factor",
-        "mfa",
-        "otp",
-        "autentikasi dua faktor"
-    ],
-
-    # Keyword scam
-    "scam": [
-        "scam",
-        "penipuan",
-        "tipu",
-        "modus"
-    ],
-
-    # Keyword VPN
-    "vpn": [
-        "vpn",
-        "virtual private"
-    ],
-
-    # Keyword firewall
-    "firewall": [
-        "firewall",
-        "fire wall"
-    ],
-
-    # Keyword encryption
-    "encryption": [
-        "enkripsi",
-        "encryption",
-        "https",
-        "ssl"
-    ],
+    "phishing": ["phishing", "phish", "email palsu", "penipuan email"],
+    "malware": ["malware", "virus", "trojan", "spyware", "adware", "worm"],
+    "ransomware": ["ransomware", "ransom", "tebusan", "enkripsi file"],
+    "password": ["password", "kata sandi", "sandi", "passphrase", "credential"],
+    "social engineering": ["social engineering", "sosial engineering", "manipulasi", "penipuan"],
+    "2fa": ["2fa", "two factor", "mfa", "otp", "autentikasi dua faktor", "two-factor"],
+    "scam": ["scam", "penipuan", "tipu", "modus", "investasi bodong"],
+    "vpn": ["vpn", "virtual private"],
+    "firewall": ["firewall", "fire wall"],
+    "encryption": ["enkripsi", "encryption", "encrypt", "https", "tls", "ssl"],
 }
 
 
-# =========================================================
-# DEFAULT RESPONSE
-# =========================================================
-# Respons default jika keyword tidak ditemukan
-
 _DEFAULT_RESPONSE = (
-    "Terima kasih atas pertanyaan Anda.\n\n"
+    "Terima kasih atas pertanyaan Anda! Sebagai **CyberGuard AI**, saya siap "
+    "membantu Anda memahami dunia keamanan siber.\n\n"
     "Saya dapat membantu topik seperti:\n"
-    "- Phishing\n"
-    "- Malware\n"
-    "- Password Security\n"
-    "- VPN\n"
-    "- Firewall\n\n"
-    "Silakan gunakan kata kunci cyber security yang lebih spesifik."
+    "- Phishing & Social Engineering\n"
+    "- Malware & Ransomware\n"
+    "- Password Security & 2FA\n"
+    "- Scam Detection & VPN\n"
+    "- Firewall & Encryption\n\n"
+    "Silakan ajukan pertanyaan spesifik, atau gunakan fitur **Password Checker** "
+    "dan **URL Scanner** di sidebar untuk analisis langsung.\n\n"
+    "_Tip: Gunakan kata kunci seperti 'phishing', 'malware', atau 'password' "
+    "untuk respons yang lebih spesifik._"
 )
 
-
-# =========================================================
-# PROCESS USER MESSAGE
-# =========================================================
 
 def process_message(user_message: str, chat_history: Optional[List[Dict]] = None) -> Dict:
     """
     Memproses pesan pengguna dan menghasilkan respons AI.
-    """
 
-    # Mengecek apakah input kosong
+    Alur pemrosesan:
+        1. Normalisasi input
+        2. Pencocokan keyword ke knowledge base
+        3. Generate respons (placeholder — siap diganti OpenAI API)
+
+    Args:
+        user_message: Pesan teks dari pengguna.
+        chat_history: Riwayat chat sebelumnya (untuk konteks future OpenAI).
+
+    Returns:
+        Dict berisi: response, topic, confidence.
+    """
     if not user_message or not user_message.strip():
         return {
             "response": "Silakan ketik pertanyaan Anda tentang cyber security.",
@@ -269,16 +181,10 @@ def process_message(user_message: str, chat_history: Optional[List[Dict]] = None
             "confidence": 0.0,
         }
 
-    # Mengubah teks menjadi lowercase
     normalized = user_message.strip().lower()
-
-    # Mencocokkan topik berdasarkan keyword
     topic, confidence = _match_topic(normalized)
-
-    # Membuat respons AI
     response = _generate_response(normalized, topic)
 
-    # Mengembalikan hasil respons
     return {
         "response": response,
         "topic": topic,
@@ -286,116 +192,112 @@ def process_message(user_message: str, chat_history: Optional[List[Dict]] = None
     }
 
 
-# =========================================================
-# MATCH TOPIC
-# =========================================================
-
 def _match_topic(message: str) -> tuple:
     """
-    Mendeteksi topik berdasarkan keyword user.
-    """
+    Mencocokkan pesan pengguna dengan topik knowledge base.
 
+    Args:
+        message: Pesan yang sudah dinormalisasi (lowercase).
+
+    Returns:
+        Tuple (topic_key, confidence_score).
+    """
     best_topic = "general"
     best_score = 0.0
 
-    # Loop seluruh keyword map
     for topic, keywords in _KEYWORD_MAP.items():
-
-        # Menghitung jumlah keyword yang cocok
         matches = sum(1 for kw in keywords if kw in message)
-
-        # Jika ada keyword cocok
         if matches > 0:
-
-            # Menghitung score kecocokan
             score = matches / len(keywords)
-
-            # Menyimpan topic dengan score tertinggi
             if score > best_score:
                 best_score = score
                 best_topic = topic
 
-    # Mengatur confidence score
     confidence = min(best_score * 2, 1.0) if best_score > 0 else 0.3
-
     return best_topic, round(confidence, 2)
 
 
-# =========================================================
-# GENERATE RESPONSE
-# =========================================================
-
 def _generate_response(message: str, topic: str) -> str:
     """
-    Membuat respons AI berdasarkan topik.
-    """
+    Menghasilkan respons berdasarkan topik yang terdeteksi.
 
-    # Jika topic ditemukan di knowledge base
+    Untuk integrasi OpenAI nanti, ganti fungsi ini dengan API call:
+        openai.ChatCompletion.create(...)
+
+    Args:
+        message: Pesan pengguna (normalized).
+        topic: Topik yang terdeteksi dari keyword matching.
+
+    Returns:
+        str: Respons AI untuk ditampilkan ke pengguna.
+    """
     if topic in _KNOWLEDGE_BASE:
         return _KNOWLEDGE_BASE[topic]
 
-    # Respons sapaan
     if "halo" in message or "hai" in message or "hello" in message:
         return (
-            "Halo! Saya CyberGuard AI.\n\n"
-            "Saya siap membantu Anda memahami keamanan digital."
+            "Halo! Saya **CyberGuard AI** — asisten keamanan siber profesional Anda.\n\n"
+            "Saya di sini untuk membantu Anda memahami ancaman digital dan "
+            "cara melindungi diri. Apa yang ingin Anda ketahui hari ini?\n\n"
+            "Contoh pertanyaan:\n"
+            "- Apa itu phishing dan bagaimana mengenalinya?\n"
+            "- Bagaimana membuat password yang kuat?\n"
+            "- Apa itu ransomware?\n"
+            "- Tips keamanan akun online"
         )
 
-    # Respons ucapan terima kasih
-    if "terima kasih" in message or "makasih" in message:
+    if "terima kasih" in message or "makasih" in message or "thanks" in message:
         return (
-            "Sama-sama! Tetap jaga keamanan digital Anda 🛡️"
+            "Sama-sama! Tetap waspada dan jaga keamanan digital Anda. "
+            "Jika ada pertanyaan lain, saya siap membantu. Stay safe! 🛡️"
         )
 
-    # Respons tips keamanan
-    if "tips" in message or "saran" in message:
+    if "tips" in message or "saran" in message or "rekomendasi" in message:
         return (
-            "Tips keamanan digital:\n"
-            "1. Gunakan password kuat\n"
-            "2. Aktifkan 2FA\n"
-            "3. Hindari link mencurigakan"
+            "**Tips Keamanan Digital Harian:**\n\n"
+            "1. Aktifkan 2FA di semua akun penting\n"
+            "2. Update software dan OS secara rutin\n"
+            "3. Gunakan password unik + password manager\n"
+            "4. Waspadai link dan attachment tidak dikenal\n"
+            "5. Backup data penting secara berkala\n"
+            "6. Gunakan VPN di Wi-Fi publik\n"
+            "7. Review permission aplikasi di smartphone\n"
+            "8. Edukasi diri tentang social engineering"
         )
 
-    # Jika tidak ada topik cocok
     return _DEFAULT_RESPONSE
 
 
-# =========================================================
-# WELCOME MESSAGE
-# =========================================================
-
 def get_welcome_message() -> str:
     """
-    Menampilkan pesan awal chatbot.
-    """
+    Mengembalikan pesan sambutan default untuk chatbot.
 
+    Returns:
+        str: Pesan pembuka chatbot.
+    """
     return (
-        "Selamat datang di CyberGuard AI Chat 🛡️\n\n"
-        "Tanyakan apa saja tentang cyber security."
+        "Selamat datang di **CyberGuard AI Chat**! 🛡️\n\n"
+        "Saya asisten keamanan siber Anda. Tanyakan apa saja tentang "
+        "phishing, malware, password security, dan topik cyber lainnya.\n\n"
+        "_Ketik pertanyaan Anda di bawah untuk memulai._"
     )
 
 
-# =========================================================
-# FORMAT CHAT FOR API
-# =========================================================
-
 def format_chat_for_api(chat_history: List[Dict]) -> List[Dict]:
     """
-    Mengubah format chat agar siap digunakan untuk OpenAI API.
+    Memformat riwayat chat ke format OpenAI API (untuk pengembangan future).
+
+    Args:
+        chat_history: List dict dengan keys 'role' dan 'content'.
+
+    Returns:
+        List[Dict]: Format siap dikirim ke OpenAI ChatCompletion API.
     """
-
     formatted = []
-
-    # Loop seluruh riwayat chat
     for msg in chat_history:
-
-        # Menentukan role user atau assistant
         role = "user" if msg.get("role") == "user" else "assistant"
-
-        # Menambahkan format baru
         formatted.append({
             "role": role,
             "content": msg.get("content", ""),
         })
-
     return formatted

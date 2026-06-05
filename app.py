@@ -1,6 +1,6 @@
 """
 app.py — CyberGuard AI
-Aplikasi utama Streamlit: UI, navigasi, dashboard, dan integrasi modul.
+Aplikasi utama Streamlit: UI, navigasi, dashboard, onboarding, dan integrasi modul.
 Jalankan: streamlit run app.py
 """
 
@@ -11,7 +11,19 @@ import engine
 import fms
 
 # ---------------------------------------------------------------------------
-# Konfigurasi Halaman (harus pertama)
+# Konstanta navigasi — daftar halaman yang valid di aplikasi
+# ---------------------------------------------------------------------------
+
+VALID_PAGES = [
+    "Dashboard",
+    "AI Chatbot",
+    "Password Checker",
+    "URL Scanner",
+    "Security Tips",
+]
+
+# ---------------------------------------------------------------------------
+# Konfigurasi Halaman (harus dipanggil pertama oleh Streamlit)
 # ---------------------------------------------------------------------------
 
 st.set_page_config(
@@ -48,15 +60,28 @@ load_css()
 
 def init_session_state() -> None:
     """
-    Menginisialisasi variabel session_state untuk chat history
-    dan navigasi halaman.
+    Menginisialisasi variabel session_state untuk chat, navigasi,
+    onboarding, dan hasil scan URL.
     """
+    # State chatbot
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
-    if "current_page" not in st.session_state:
-        st.session_state.current_page = "Dashboard"
     if "chat_initialized" not in st.session_state:
         st.session_state.chat_initialized = False
+
+    # State navigasi halaman
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "Dashboard"
+
+    # State onboarding — muncul sekali per sesi browser
+    if "onboarding_done" not in st.session_state:
+        st.session_state.onboarding_done = False
+    if "onboarding_step" not in st.session_state:
+        st.session_state.onboarding_step = 0
+
+    # State URL Scanner — menyimpan hasil agar tidak hilang setelah rerun
+    if "url_scan_result" not in st.session_state:
+        st.session_state.url_scan_result = None
 
 
 init_session_state()
@@ -65,6 +90,18 @@ init_session_state()
 # ---------------------------------------------------------------------------
 # Helper UI Functions
 # ---------------------------------------------------------------------------
+
+def navigate_to(page: str) -> None:
+    """
+    Mengarahkan pengguna ke halaman tertentu dan me-refresh UI.
+
+    Args:
+        page: Nama halaman tujuan (harus ada di VALID_PAGES).
+    """
+    if page in VALID_PAGES:
+        st.session_state.current_page = page
+        st.rerun()
+
 
 def render_badge(level: str) -> str:
     """
@@ -77,17 +114,20 @@ def render_badge(level: str) -> str:
         str: HTML string badge.
     """
     level_lower = level.lower()
+    # Alias: CSS menggunakan .cg-badge-danger untuk status Dangerous
+    if level_lower == "dangerous":
+        level_lower = "danger"
     css_class = f"cg-badge cg-badge-{level_lower}"
     return f'<span class="{css_class}">{level}</span>'
 
 
 def render_progress_bar(score: int, level: str) -> str:
     """
-    Membuat HTML progress bar untuk skor keamanan password.
+    Membuat HTML progress bar untuk skor keamanan.
 
     Args:
         score: Skor 0-100.
-        level: Level (Weak, Medium, Strong).
+        level: Level visual (Weak, Medium, Strong).
 
     Returns:
         str: HTML progress bar.
@@ -100,6 +140,227 @@ def render_progress_bar(score: int, level: str) -> str:
     )
 
 
+def render_url_analysis_result(result: dict, show_title: bool = True) -> None:
+    """
+    Menampilkan hasil analisis URL secara konsisten di seluruh halaman.
+
+    Args:
+        result: Dict dari fms.analyze_url().
+        show_title: Tampilkan judul section hasil atau tidak.
+    """
+    status = result.get("status", "Suspicious")
+    risk_score = result.get("risk_score", 0)
+    summary = result.get("summary", "")
+    findings = result.get("findings", [])
+    url_checked = result.get("url_checked", "")
+
+    # Tentukan warna progress bar berdasarkan skor risiko
+    if risk_score < 30:
+        bar_level = "Strong"
+    elif risk_score < 60:
+        bar_level = "Medium"
+    else:
+        bar_level = "Weak"
+
+    if show_title:
+        st.markdown("##### 📊 Hasil Analisis")
+
+    st.markdown(
+        f"""
+        <div class="cg-scan-result">
+            <div class="cg-scan-result-header">
+                <span>Status Keamanan</span>
+                {render_badge(status)}
+            </div>
+            <div class="cg-scan-metrics">
+                <div class="cg-scan-metric">
+                    <span class="cg-scan-metric-label">Risk Score</span>
+                    <span class="cg-scan-metric-value">{risk_score}/100</span>
+                </div>
+            </div>
+            <div class="cg-scan-risk-label">Tingkat risiko</div>
+            {render_progress_bar(risk_score, bar_level)}
+            <div class="cg-scan-summary">
+                <span class="cg-scan-summary-label">Ringkasan</span>
+                <p>{summary}</p>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if findings:
+        st.markdown("##### 🔎 Temuan Analisis")
+        for finding in findings:
+            st.markdown(
+                f'<div class="cg-finding">⚠️ {finding}</div>',
+                unsafe_allow_html=True,
+            )
+
+    if url_checked:
+        st.markdown(
+            f'<p class="cg-url-checked">URL diperiksa: {url_checked}</p>',
+            unsafe_allow_html=True,
+        )
+
+
+def send_chat_message(message: str) -> None:
+    """
+    Mengirim pesan ke chatbot dan menyimpan respons ke history.
+
+    Args:
+        message: Pertanyaan pengguna.
+    """
+    st.session_state.chat_history.append({"role": "user", "content": message})
+    result = engine.process_message(message, st.session_state.chat_history)
+    st.session_state.chat_history.append({
+        "role": "assistant",
+        "content": result["response"],
+    })
+    st.rerun()
+
+
+# ---------------------------------------------------------------------------
+# Welcome Tour / Onboarding
+# ---------------------------------------------------------------------------
+
+# Konten tiap langkah panduan pengguna baru
+ONBOARDING_STEPS = [
+    {
+        "title": "Selamat Datang di CyberGuard AI",
+        "icon": "🛡️",
+        "body": """
+        <p>CyberGuard AI adalah <b>asisten keamanan siber</b> yang membantu pengguna
+        memahami ancaman digital dan meningkatkan keamanan akun mereka.</p>
+        <p>Panduan singkat ini akan memperkenalkan fitur utama aplikasi.
+        Tekan <b>Next</b> untuk melanjutkan atau <b>Lewati</b> untuk langsung masuk.</p>
+        """,
+    },
+    {
+        "title": "💬 AI Chatbot",
+        "icon": "💬",
+        "body": """
+        <p><b>Yang bisa Anda lakukan:</b></p>
+        <ul class="cg-onboard-list">
+            <li>Bertanya tentang cyber security</li>
+            <li>Phishing, Malware, Ransomware</li>
+            <li>VPN, Firewall, Password Security</li>
+            <li>2FA, Scam dan penipuan online</li>
+        </ul>
+        """,
+    },
+    {
+        "title": "🔑 Password Checker",
+        "icon": "🔑",
+        "body": """
+        <p><b>Yang bisa Anda lakukan:</b></p>
+        <ul class="cg-onboard-list">
+            <li>Mengecek kekuatan password</li>
+            <li>Mengetahui tingkat keamanan password</li>
+            <li>Mendapatkan rekomendasi perbaikan password</li>
+        </ul>
+        """,
+    },
+    {
+        "title": "🔗 URL Scanner",
+        "icon": "🔗",
+        "body": """
+        <p><b>Yang bisa Anda lakukan:</b></p>
+        <ul class="cg-onboard-list">
+            <li>Memeriksa keamanan website</li>
+            <li>Mendeteksi indikasi phishing</li>
+            <li>Menampilkan tingkat risiko website</li>
+        </ul>
+        """,
+    },
+    {
+        "title": "📚 Security Tips",
+        "icon": "📚",
+        "body": """
+        <p><b>Yang bisa Anda lakukan:</b></p>
+        <ul class="cg-onboard-list">
+            <li>Mendapatkan tips keamanan digital</li>
+            <li>Membangun awareness keamanan siber</li>
+            <li>Belajar praktik terbaik proteksi data</li>
+        </ul>
+        """,
+    },
+    {
+        "title": "Anda Siap Menggunakan CyberGuard AI",
+        "icon": "🚀",
+        "body": """
+        <p>Anda sudah memahami fitur utama aplikasi.
+        Mulai eksplorasi CyberGuard AI dan tingkatkan keamanan digital Anda.</p>
+        <p>Tekan tombol di bawah untuk langsung membuka <b>AI Chatbot</b>.</p>
+        """,
+        "is_final": True,
+    },
+]
+
+
+def finish_onboarding(go_to_chatbot: bool = False) -> None:
+    """
+    Menutup panduan onboarding untuk sesi ini.
+
+    Args:
+        go_to_chatbot: True jika pengguna menekan Mulai Sekarang.
+    """
+    st.session_state.onboarding_done = True
+    if go_to_chatbot:
+        st.session_state.current_page = "AI Chatbot"
+    st.rerun()
+
+
+def render_onboarding() -> None:
+    """
+    Merender kartu Welcome Guide / Onboarding untuk pengguna baru.
+    Hanya muncul sekali per sesi hingga Lewati atau Mulai Sekarang ditekan.
+    """
+    step_idx = st.session_state.onboarding_step
+    step = ONBOARDING_STEPS[step_idx]
+    total_steps = len(ONBOARDING_STEPS)
+    is_final = step.get("is_final", False)
+
+    # Progress indicator langkah panduan
+    progress_pct = int(((step_idx + 1) / total_steps) * 100)
+
+    st.markdown(
+        f"""
+        <div class="cg-onboarding-wrap">
+            <div class="cg-onboarding-card">
+                <div class="cg-onboarding-icon">{step["icon"]}</div>
+                <h2 class="cg-onboarding-title">{step["title"]}</h2>
+                <div class="cg-onboarding-progress">
+                    <div class="cg-onboarding-progress-fill" style="width:{progress_pct}%;"></div>
+                </div>
+                <p class="cg-onboarding-step-label">Langkah {step_idx + 1} dari {total_steps}</p>
+                <div class="cg-onboarding-body">{step["body"]}</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # Tombol navigasi panduan
+    if is_final:
+        col_skip, col_start = st.columns([1, 2])
+        with col_skip:
+            if st.button("Lewati", key="onboard_skip_final", use_container_width=True):
+                finish_onboarding(go_to_chatbot=False)
+        with col_start:
+            if st.button("🚀 Mulai Sekarang", key="onboard_start", use_container_width=True):
+                finish_onboarding(go_to_chatbot=True)
+    else:
+        col_skip, col_next = st.columns([1, 2])
+        with col_skip:
+            if st.button("Lewati", key=f"onboard_skip_{step_idx}", use_container_width=True):
+                finish_onboarding(go_to_chatbot=False)
+        with col_next:
+            if st.button("Next →", key=f"onboard_next_{step_idx}", use_container_width=True):
+                st.session_state.onboarding_step += 1
+                st.rerun()
+
+
 # ---------------------------------------------------------------------------
 # Sidebar
 # ---------------------------------------------------------------------------
@@ -109,9 +370,10 @@ def render_sidebar() -> str:
     Merender sidebar navigasi dan mengembalikan halaman yang dipilih.
 
     Returns:
-        str: Nama halaman aktif.
+        str: Nama halaman aktif dari radio menu.
     """
     with st.sidebar:
+        # Logo dan branding aplikasi
         st.markdown(
             """
             <div class="cg-sidebar-logo">
@@ -125,53 +387,40 @@ def render_sidebar() -> str:
 
         st.markdown("---")
 
+        # Menu navigasi utama
         st.markdown("##### 📍 Navigasi")
         page = st.radio(
             "Menu",
-            [
-                "Dashboard",
-                "AI Chatbot",
-                "Password Checker",
-                "URL Scanner",
-                "Security Tips",
-            ],
+            VALID_PAGES,
             label_visibility="collapsed",
         )
 
         st.markdown("---")
 
-        st.markdown("##### 🔒 Status Keamanan")
-        st.markdown(
-            """
-            <p style="font-size:0.85rem;color:#94a3b8;">
-                <span class="cg-status-dot cg-status-active"></span>
-                Sistem Aktif & Terlindungi
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown("---")
-
+        # Quick Tools — akses cepat ke fitur populer
         st.markdown("##### ⚡ Quick Tools")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("💬 Chat", use_container_width=True):
-                st.session_state.current_page = "AI Chatbot"
-        with col2:
-            if st.button("🔑 Pass", use_container_width=True):
-                st.session_state.current_page = "Password Checker"
+        qcol1, qcol2 = st.columns(2)
+        with qcol1:
+            if st.button("💬 Chat", key="qt_chat", use_container_width=True):
+                navigate_to("AI Chatbot")
+        with qcol2:
+            if st.button("🔑 Pass", key="qt_pass", use_container_width=True):
+                navigate_to("Password Checker")
+
+        # Tombol URL Scanner ditambahkan sesuai permintaan revisi
+        if st.button("🔗 URL Scan", key="qt_url", use_container_width=True):
+            navigate_to("URL Scanner")
 
         st.markdown("---")
 
+        # Informasi singkat aplikasi
         st.markdown("##### ℹ️ About")
         st.markdown(
             """
             <p style="font-size:0.78rem;color:#64748b;line-height:1.5;">
-            <b>CyberGuard AI</b> v1.0<br>
-            AI Cyber Security Assistant<br>
-            Edukasi • Analisis • Proteksi<br><br>
-            <i>Bukan tools hacking — fokus edukasi & awareness.</i>
+            <b>CyberGuard AI</b> v1.1<br>
+            Edukasi &amp; awareness keamanan siber.<br><br>
+            <i>Bukan tools hacking.</i>
             </p>
             """,
             unsafe_allow_html=True,
@@ -181,163 +430,64 @@ def render_sidebar() -> str:
 
 
 # ---------------------------------------------------------------------------
-# Dashboard / Welcome Screen
+# Dashboard — tampilan bersih (Less is More)
 # ---------------------------------------------------------------------------
 
 def render_dashboard() -> None:
     """
-    Merender halaman dashboard utama dengan welcome screen,
-    metric cards, quick start, dan penjelasan fitur.
+    Merender dashboard utama yang ringkas dan profesional.
+    Menghapus elemen dekoratif tanpa fungsi (metric palsu, duplikasi konten).
     """
+    # Hero section — pesan utama aplikasi
     st.markdown(
         """
-        <div class="cg-hero">
+        <div class="cg-hero cg-hero-compact">
             <div class="cg-hero-icon">🛡️</div>
             <h1>CyberGuard AI</h1>
-            <p>Asisten Keamanan Siber Profesional — Edukasi, Analisis, dan Proteksi Digital Anda</p>
+            <p>Asisten keamanan siber untuk edukasi, analisis, dan proteksi digital Anda.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    # Metric cards
-    cols = st.columns(4)
-    metrics = [
-        ("🎯", "Threat Detection", "Active"),
-        ("🔐", "Password Security", "Enabled"),
-        ("🔗", "Link Safety", "Monitoring"),
-        ("🤖", "AI Protection", "Online"),
+    st.markdown(
+        '<div class="cg-section-title">🧭 <span>Fitur Utama</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    # Grid fitur — setiap kartu punya fungsi navigasi nyata
+    features = [
+        ("💬", "AI Chatbot", "Tanya jawab seputar keamanan siber", "AI Chatbot"),
+        ("🔑", "Password Checker", "Cek kekuatan & rekomendasi password", "Password Checker"),
+        ("🔗", "URL Scanner", "Deteksi indikasi phishing pada link", "URL Scanner"),
+        ("📚", "Security Tips", "Tips keamanan digital terkini", "Security Tips"),
     ]
-    for col, (icon, label, value) in zip(cols, metrics):
-        with col:
+
+    fcols = st.columns(2)
+    for i, (icon, title, desc, target) in enumerate(features):
+        with fcols[i % 2]:
             st.markdown(
                 f"""
-                <div class="cg-metric">
-                    <div class="cg-metric-icon">{icon}</div>
-                    <div class="cg-metric-value">{value}</div>
-                    <div class="cg-metric-label">{label}</div>
+                <div class="cg-feature-card">
+                    <div class="cg-feature-icon">{icon}</div>
+                    <h3>{title}</h3>
+                    <p>{desc}</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-
-    st.markdown('<div class="cg-section-title">🚀 <span>Quick Start</span></div>', unsafe_allow_html=True)
-
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        st.markdown(
-            """
-            <div class="cg-card">
-                <h3>📋 Petunjuk Penggunaan</h3>
-                <ol class="cg-steps">
-                    <li>Gunakan <b>AI Chatbot</b> untuk bertanya tentang cyber security</li>
-                    <li>Gunakan <b>Password Checker</b> untuk mengecek keamanan password</li>
-                    <li>Gunakan <b>URL Scanner</b> untuk mendeteksi link phishing</li>
-                    <li>Gunakan <b>sidebar</b> untuk navigasi antar fitur</li>
-                </ol>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col_right:
-        st.markdown(
-            """
-            <div class="cg-card">
-                <h3>✨ Fitur Utama</h3>
-                <ul>
-                    <li><b>AI Chatbot</b> — Tanya jawab keamanan siber interaktif</li>
-                    <li><b>Password Checker</b> — Analisis kekuatan password real-time</li>
-                    <li><b>URL Scanner</b> — Deteksi indikasi phishing pada link</li>
-                    <li><b>Security Tips</b> — Tips keamanan digital terkini</li>
-                </ul>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown('<div class="cg-section-title">💡 <span>Tip Hari Ini</span></div>', unsafe_allow_html=True)
-    tip = fms.get_random_tip()
-    st.markdown(f'<div class="cg-tip-box">💡 {tip}</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="cg-section-title">🎯 <span>Mulai Sekarang</span></div>', unsafe_allow_html=True)
-    btn_cols = st.columns(4)
-    actions = [
-        ("💬 Buka Chatbot", "AI Chatbot"),
-        ("🔑 Cek Password", "Password Checker"),
-        ("🔗 Scan URL", "URL Scanner"),
-        ("📚 Lihat Tips", "Security Tips"),
-    ]
-    for col, (label, target_page) in zip(btn_cols, actions):
-        with col:
-            if st.button(label, use_container_width=True, key=f"dash_{target_page}"):
-                st.session_state.current_page = target_page
-                st.rerun()
+            if st.button(f"Buka {title}", key=f"feat_{target}", use_container_width=True):
+                navigate_to(target)
 
 
 # ---------------------------------------------------------------------------
 # Website Security Check (embedded in AI Chatbot page)
 # ---------------------------------------------------------------------------
 
-def render_website_security_result(result: dict) -> None:
-    """
-    Menampilkan hasil analisis URL dari fms.analyze_url().
-
-    Args:
-        result: Dict berisi status, risk_score, findings, summary, url_checked.
-    """
-    status = result.get("status", "Suspicious")
-    risk_score = result.get("risk_score", 0)
-    summary = result.get("summary", "")
-    findings = result.get("findings", [])
-    url_checked = result.get("url_checked", "")
-
-    risk_level = "strong" if risk_score < 30 else ("medium" if risk_score < 60 else "weak")
-
-    st.markdown(
-        f"""
-        <div class="cg-websec-result">
-            <div class="cg-websec-result-header">
-                <span>Hasil Analisis</span>
-                {render_badge(status)}
-            </div>
-            <div class="cg-websec-metrics">
-                <div class="cg-websec-metric">
-                    <span class="cg-websec-metric-label">Risk Score</span>
-                    <span class="cg-websec-metric-value">{risk_score}/100</span>
-                </div>
-            </div>
-            <div class="cg-websec-risk-label">Tingkat risiko</div>
-            {render_progress_bar(risk_score, "Strong" if risk_level == "strong" else ("Medium" if risk_level == "medium" else "Weak"))}
-            <div class="cg-websec-summary">
-                <span class="cg-websec-summary-label">Ringkasan</span>
-                <p>{summary}</p>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if findings:
-        st.markdown("##### 🔎 Temuan Analisis")
-        for finding in findings:
-            st.markdown(
-                f'<div class="cg-finding cg-websec-finding">⚠️ {finding}</div>',
-                unsafe_allow_html=True,
-            )
-
-    if url_checked:
-        st.markdown(
-            f'<p class="cg-websec-url-checked">URL diperiksa: {url_checked}</p>',
-            unsafe_allow_html=True,
-        )
-
-
 def render_website_security_check() -> None:
     """
     Merender section Website Security Check pada halaman AI Chatbot.
-    Menggunakan fms.analyze_url() untuk analisis heuristik URL.
+    Menggunakan fms.analyze_url() — tanpa membuat fungsi analisis baru.
     """
     st.markdown(
         '<div class="cg-section-title cg-websec-section-title">'
@@ -348,15 +498,12 @@ def render_website_security_check() -> None:
     st.markdown(
         """
         <div class="cg-card cg-websec-card">
-            <p>Periksa keamanan website secara instan — deteksi indikasi phishing
-            tanpa perlu chat terlebih dahulu. Analisis berbasis heuristik;
-            verifikasi manual tetap disarankan.</p>
+            <p>Periksa keamanan website secara instan tanpa harus chat terlebih dahulu.
+            Analisis berbasis heuristik — verifikasi manual tetap disarankan.</p>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
-    st.markdown('<div class="cg-websec-input-area"></div>', unsafe_allow_html=True)
 
     websec_url = st.text_input(
         "URL Website",
@@ -365,45 +512,63 @@ def render_website_security_check() -> None:
         label_visibility="collapsed",
     )
 
-    analyze_clicked = st.button(
-        "🔍 Analisis Website",
-        key="websec_analyze_btn",
-        use_container_width=True,
-    )
-
-    if analyze_clicked:
+    if st.button("🔍 Analisis Website", key="websec_analyze_btn", use_container_width=True):
         if not websec_url or not websec_url.strip():
             st.warning("Masukkan URL terlebih dahulu.")
         else:
             with st.spinner("Menganalisis keamanan website..."):
                 result = fms.analyze_url(websec_url)
-            render_website_security_result(result)
+            render_url_analysis_result(result)
 
 
 # ---------------------------------------------------------------------------
 # AI Chatbot Page
 # ---------------------------------------------------------------------------
 
+# Daftar contoh pertanyaan untuk panduan pengguna
+CHAT_EXAMPLE_QUESTIONS = [
+    "Apa itu phishing?",
+    "Bagaimana cara membuat password yang aman?",
+    "Apa itu ransomware?",
+    "Bagaimana cara mengaktifkan 2FA?",
+    "Apa fungsi VPN?",
+    "Apa itu firewall?",
+]
+
+# Pertanyaan cepat (tombol shortcut di bawah chat)
+CHAT_QUICK_QUESTIONS = [
+    "Apa itu phishing?",
+    "Tips password aman?",
+    "Apa itu ransomware?",
+    "Cara aktifkan 2FA?",
+]
+
+
 def render_chatbot() -> None:
     """
-    Merender halaman chatbot AI dengan history dan input pengguna.
+    Merender halaman chatbot AI yang modern dengan panduan contoh pertanyaan.
     """
-    st.markdown('<div class="cg-section-title">💬 <span>AI Cyber Security Chatbot</span></div>', unsafe_allow_html=True)
-
     st.markdown(
-        """
-        <div class="cg-card">
-            <p>Tanyakan apa saja tentang phishing, malware, ransomware, password security,
-            social engineering, dan topik cyber lainnya.</p>
+        '<div class="cg-section-title">💬 <span>AI Cyber Security Chatbot</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    # Card contoh pertanyaan — membantu pengguna baru
+    examples_html = "".join(
+        f"<li>{q}</li>" for q in CHAT_EXAMPLE_QUESTIONS
+    )
+    st.markdown(
+        f"""
+        <div class="cg-card cg-chat-guide">
+            <h3>💡 Contoh Pertanyaan</h3>
+            <p>Klik salah satu pertanyaan cepat di bawah chat, atau ketik sendiri di kolom chat.</p>
+            <ul class="cg-example-list">{examples_html}</ul>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    render_website_security_check()
-
-    st.markdown("---")
-
+    # Inisialisasi pesan sambutan chatbot sekali per sesi
     if not st.session_state.chat_initialized:
         st.session_state.chat_history.append({
             "role": "assistant",
@@ -411,84 +576,57 @@ def render_chatbot() -> None:
         })
         st.session_state.chat_initialized = True
 
-    chat_container = st.container()
-    with chat_container:
-        for msg in st.session_state.chat_history:
-            if msg["role"] == "user":
-                st.markdown(
-                    f"""
-                    <div class="cg-chat-user">
-                        <div class="cg-chat-label">Anda</div>
-                        {msg["content"]}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(msg["content"])
-                st.markdown(
-                    '<div style="margin-bottom:0.75rem;"></div>',
-                    unsafe_allow_html=True,
-                )
+    # Area riwayat percakapan
+    st.markdown('<div class="cg-chat-area">', unsafe_allow_html=True)
+    for msg in st.session_state.chat_history:
+        if msg["role"] == "user":
+            st.markdown(
+                f"""
+                <div class="cg-chat-user">
+                    <div class="cg-chat-label">Anda</div>
+                    {msg["content"]}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"""
+                <div class="cg-chat-assistant">
+                    <div class="cg-chat-label">CyberGuard AI</div>
+                    {msg["content"]}
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("---")
 
-    col_input, col_send = st.columns([5, 1])
-    with col_input:
-        user_input = st.chat_input("Ketik pertanyaan cyber security Anda...")
-    with col_send:
-        send_clicked = st.button("Kirim 📤", use_container_width=True)
+    # Input chat pengguna
+    user_input = st.chat_input("Ketik pertanyaan cyber security Anda...")
 
-    message = user_input if user_input else None
+    if user_input:
+        send_chat_message(user_input)
 
-    if send_clicked:
-        quick = st.session_state.get("quick_question", "")
-        if quick:
-            message = quick
-            st.session_state.quick_question = ""
+    # Tombol pertanyaan cepat
+    st.markdown("##### ⚡ Pertanyaan Cepat")
+    qcols = st.columns(2)
+    for i, question in enumerate(CHAT_QUICK_QUESTIONS):
+        with qcols[i % 2]:
+            if st.button(question, key=f"quick_{i}", use_container_width=True):
+                send_chat_message(question)
 
-    if message:
-        st.session_state.chat_history.append({
-            "role": "user",
-            "content": message,
-        })
-
-        result = engine.process_message(
-            message,
-            st.session_state.chat_history,
-        )
-
-        st.session_state.chat_history.append({
-            "role": "assistant",
-            "content": result["response"],
-        })
-
-        st.rerun()
-
-    st.markdown("##### 💡 Pertanyaan Cepat")
-    quick_cols = st.columns(4)
-    quick_questions = [
-        "Apa itu phishing?",
-        "Tips password aman?",
-        "Apa itu ransomware?",
-        "Cara aktifkan 2FA?",
-    ]
-    for col, q in zip(quick_cols, quick_questions):
-        with col:
-            if st.button(q, use_container_width=True, key=f"quick_{q}"):
-                st.session_state.quick_question = q
-                st.session_state.chat_history.append({"role": "user", "content": q})
-                result = engine.process_message(q, st.session_state.chat_history)
-                st.session_state.chat_history.append({
-                    "role": "assistant",
-                    "content": result["response"],
-                })
-                st.rerun()
-
-    if st.button("🗑️ Hapus Riwayat Chat"):
+    # Tombol reset riwayat chat
+    if st.button("🗑️ Hapus Riwayat Chat", key="clear_chat"):
         st.session_state.chat_history = []
         st.session_state.chat_initialized = False
         st.rerun()
+
+    st.markdown("---")
+
+    # Fitur tambahan: scan URL langsung dari halaman chatbot
+    render_website_security_check()
 
 
 # ---------------------------------------------------------------------------
@@ -499,7 +637,10 @@ def render_password_checker() -> None:
     """
     Merender halaman analisis kekuatan password.
     """
-    st.markdown('<div class="cg-section-title">🔑 <span>Password Strength Checker</span></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="cg-section-title">🔑 <span>Password Strength Checker</span></div>',
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         """
@@ -562,50 +703,115 @@ def render_password_checker() -> None:
 # URL Scanner Page
 # ---------------------------------------------------------------------------
 
+# Contoh URL edukatif untuk panduan pengguna
+SAFE_URL_EXAMPLES = [
+    "https://www.google.com",
+    "https://www.github.com",
+    "https://www.microsoft.com",
+]
+
+RISKY_URL_EXAMPLES = [
+    "http://free-gift-login.xyz",
+    "http://secure-bank-verification.net",
+    "http://claim-prize-now.click",
+]
+
+
+def fill_url_scan_input(url: str) -> None:
+    """
+    Callback untuk mengisi kolom URL Scanner dari tombol contoh URL.
+
+    Args:
+        url: URL contoh yang dipilih pengguna.
+    """
+    st.session_state.url_scan_input = url
+
+
 def render_url_scanner() -> None:
     """
-    Merender halaman deteksi URL/phishing.
+    Merender halaman URL Scanner dengan panduan, contoh URL, dan hasil analisis.
+    Hasil disimpan di session_state agar tidak hilang setelah rerun Streamlit.
     """
-    st.markdown('<div class="cg-section-title">🔗 <span>URL / Phishing Detector</span></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="cg-section-title">🔗 <span>URL / Phishing Detector</span></div>',
+        unsafe_allow_html=True,
+    )
 
+    # Card petunjuk penggunaan
     st.markdown(
         """
-        <div class="cg-card">
-            <p>Masukkan URL untuk dianalisis indikasi phishing.
-            Analisis berbasis heuristik — verifikasi manual tetap disarankan.</p>
+        <div class="cg-card cg-url-guide">
+            <h3>📖 Cara Menggunakan URL Scanner</h3>
+            <ol class="cg-url-steps">
+                <li>Salin alamat website yang ingin diperiksa.</li>
+                <li>Tempelkan URL ke kolom input.</li>
+                <li>Klik <b>Scan URL</b>.</li>
+                <li>Tunggu hasil analisis.</li>
+                <li>Perhatikan status dan tingkat risiko.</li>
+            </ol>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    # Input URL — key tetap agar nilai tidak hilang saat rerun
     url_input = st.text_input(
         "Masukkan URL",
         placeholder="https://example.com atau example.com",
+        key="url_scan_input",
     )
 
-    if st.button("🔍 Scan URL", use_container_width=False):
-        if not url_input:
+    # Tombol scan dengan spinner dan penyimpanan hasil ke session_state
+    scan_clicked = st.button("🔍 Scan URL", key="url_scan_btn", use_container_width=True)
+
+    if scan_clicked:
+        if not url_input or not url_input.strip():
             st.warning("Masukkan URL terlebih dahulu.")
+            st.session_state.url_scan_result = None
         else:
-            result = fms.analyze_url(url_input)
+            with st.spinner("Memindai URL..."):
+                st.session_state.url_scan_result = fms.analyze_url(url_input)
 
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(
-                    f'<div style="text-align:center;margin:1rem 0;">'
-                    f'{render_badge(result["status"])}</div>',
-                    unsafe_allow_html=True,
-                )
-            with col2:
-                st.metric("Risk Score", f'{result["risk_score"]}/100')
+    # Tampilkan hasil scan terakhir (persisten selama sesi)
+    if st.session_state.url_scan_result:
+        render_url_analysis_result(st.session_state.url_scan_result)
 
-            st.markdown(f'<div class="cg-tip-box">{result["summary"]}</div>', unsafe_allow_html=True)
+    st.markdown("---")
 
-            st.markdown("##### 🔎 Temuan Analisis")
-            for finding in result["findings"]:
-                st.markdown(f'<div class="cg-finding">⚠️ {finding}</div>', unsafe_allow_html=True)
+    # Contoh URL aman — klik untuk mengisi kolom input
+    st.markdown("##### ✅ Contoh URL Aman")
+    safe_cols = st.columns(3)
+    for i, example_url in enumerate(SAFE_URL_EXAMPLES):
+        with safe_cols[i]:
+            st.button(
+                example_url,
+                key=f"safe_url_{i}",
+                use_container_width=True,
+                on_click=fill_url_scan_input,
+                args=(example_url,),
+            )
 
-            st.markdown(f'<p style="color:#64748b;font-size:0.8rem;">URL diperiksa: {result.get("url_checked", url_input)}</p>', unsafe_allow_html=True)
+    # Contoh URL berisiko — hanya untuk edukasi
+    st.markdown("##### ⚠️ Contoh URL yang Perlu Diwaspadai")
+    risky_cols = st.columns(3)
+    for i, example_url in enumerate(RISKY_URL_EXAMPLES):
+        with risky_cols[i]:
+            st.button(
+                example_url,
+                key=f"risky_url_{i}",
+                use_container_width=True,
+                on_click=fill_url_scan_input,
+                args=(example_url,),
+            )
+
+    st.markdown(
+        """
+        <p class="cg-url-disclaimer">
+        <i>Contoh URL berisiko hanya untuk simulasi edukasi dan bukan hasil analisis nyata.</i>
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -616,19 +822,22 @@ def render_security_tips() -> None:
     """
     Merender halaman tips keamanan siber.
     """
-    st.markdown('<div class="cg-section-title">📚 <span>Cyber Security Tips</span></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="cg-section-title">📚 <span>Cyber Security Tips</span></div>',
+        unsafe_allow_html=True,
+    )
 
     tip = fms.get_random_tip()
     st.markdown(f'<div class="cg-tip-box">💡 <b>Tip Acak:</b> {tip}</div>', unsafe_allow_html=True)
 
-    if st.button("🔄 Tip Baru", use_container_width=False):
+    if st.button("🔄 Tip Baru", key="new_tip", use_container_width=False):
         st.rerun()
 
     st.markdown("##### 📋 Semua Tips Keamanan")
     for i, tip_text in enumerate(fms.get_all_tips(), 1):
         st.markdown(
-            f'<div class="cg-card" style="padding:0.75rem 1rem;">'
-            f'<p style="margin:0;"><b>{i}.</b> {tip_text}</p></div>',
+            f'<div class="cg-card cg-tip-item">'
+            f'<p><b>{i}.</b> {tip_text}</p></div>',
             unsafe_allow_html=True,
         )
 
@@ -639,16 +848,23 @@ def render_security_tips() -> None:
 
 def main() -> None:
     """
-    Entry point aplikasi — mengatur routing halaman berdasarkan sidebar.
+    Entry point aplikasi — onboarding, sidebar, dan routing halaman.
     """
     page = render_sidebar()
 
+    # Override halaman jika navigasi programmatic (Quick Tools, dashboard, onboarding)
     if st.session_state.get("current_page") and st.session_state.current_page != page:
         override = st.session_state.current_page
-        if override in ["AI Chatbot", "Password Checker", "URL Scanner", "Security Tips", "Dashboard"]:
+        if override in VALID_PAGES:
             page = override
             st.session_state.current_page = page
 
+    # Tampilkan onboarding sekali per sesi sebelum konten utama
+    if not st.session_state.onboarding_done:
+        render_onboarding()
+        return
+
+    # Render halaman sesuai menu sidebar
     pages = {
         "Dashboard": render_dashboard,
         "AI Chatbot": render_chatbot,

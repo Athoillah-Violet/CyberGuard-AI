@@ -90,6 +90,12 @@ section[data-testid="stSidebar"] hr {
     line-height: 1.6;
 }
 
+/* Hero ringkas untuk dashboard yang lebih bersih */
+.cg-hero-compact {
+    padding: 2rem 1.5rem;
+    margin-bottom: 1rem;
+}
+
 /* ---------- Glass Card ---------- */
 .cg-card {
     background: var(--cg-bg-card);
@@ -180,7 +186,8 @@ section[data-testid="stSidebar"] hr {
     border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
-.cg-badge-danger {
+.cg-badge-danger,
+.cg-badge-dangerous {
     background: rgba(239, 68, 68, 0.2);
     color: #f87171 !important;
     border: 1px solid rgba(239, 68, 68, 0.4);
@@ -239,12 +246,67 @@ section[data-testid="stSidebar"] hr {
     margin-bottom: 0.3rem;
 }
 
-/* ---------- Feature Grid ---------- */
+/* Panduan contoh pertanyaan di halaman chatbot */
+.cg-chat-guide h3 {
+    margin-bottom: 0.4rem;
+}
+
+.cg-example-list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+    color: var(--cg-text-muted) !important;
+}
+
+.cg-example-list li {
+    margin: 0.35rem 0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+
+.cg-chat-area {
+    margin: 1rem 0;
+}
+
+/* ---------- Feature Grid & Dashboard Cards ---------- */
 .cg-feature-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 1rem;
     margin: 1rem 0;
+}
+
+.cg-feature-card {
+    background: var(--cg-bg-card);
+    border: 1px solid var(--cg-border);
+    border-radius: var(--cg-radius);
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    animation: cg-slideUp 0.5s ease-out;
+}
+
+.cg-feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--cg-shadow), 0 0 20px var(--cg-blue-glow);
+}
+
+.cg-feature-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.cg-feature-card h3 {
+    color: var(--cg-blue-electric) !important;
+    font-size: 1rem;
+    margin: 0 0 0.4rem 0;
+}
+
+.cg-feature-card p {
+    color: var(--cg-text-muted) !important;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0;
 }
 
 /* ---------- Tips Box ---------- */
@@ -370,6 +432,235 @@ section[data-testid="stSidebar"] hr {
     box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
 }
 
+/* ---------- Onboarding / Welcome Tour ---------- */
+.cg-onboarding-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem 0 2rem;
+    animation: cg-fadeIn 0.6s ease-out;
+}
+
+.cg-onboarding-card {
+    width: 100%;
+    max-width: 640px;
+    background: linear-gradient(160deg, rgba(37, 99, 235, 0.12), rgba(17, 24, 39, 0.95));
+    border: 1px solid var(--cg-border);
+    border-radius: 16px;
+    padding: 2rem 2rem 1.5rem;
+    box-shadow: var(--cg-shadow), 0 0 48px var(--cg-blue-glow);
+    text-align: center;
+}
+
+.cg-onboarding-icon {
+    font-size: 3rem;
+    margin-bottom: 0.75rem;
+    filter: drop-shadow(0 0 16px var(--cg-blue-glow));
+}
+
+.cg-onboarding-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--cg-text-primary) !important;
+    margin: 0 0 1rem 0;
+    background: linear-gradient(90deg, #60a5fa, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.cg-onboarding-progress {
+    background: rgba(30, 41, 59, 0.8);
+    border-radius: 8px;
+    height: 6px;
+    overflow: hidden;
+    margin: 0 auto 0.5rem;
+    max-width: 320px;
+}
+
+.cg-onboarding-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #60a5fa);
+    border-radius: 8px;
+    transition: width 0.4s ease;
+}
+
+.cg-onboarding-step-label {
+    font-size: 0.75rem;
+    color: var(--cg-text-muted) !important;
+    margin: 0 0 1.25rem 0;
+    letter-spacing: 0.3px;
+}
+
+.cg-onboarding-body {
+    text-align: left;
+    color: var(--cg-text-muted) !important;
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.cg-onboarding-body p {
+    color: var(--cg-text-muted) !important;
+    margin: 0 0 0.75rem 0;
+}
+
+.cg-onboard-list {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}
+
+.cg-onboard-list li {
+    margin: 0.4rem 0;
+    color: var(--cg-text-primary) !important;
+    font-size: 0.92rem;
+}
+
+/* ---------- URL Scanner Guide & Examples ---------- */
+.cg-url-guide h3 {
+    margin-bottom: 0.75rem;
+}
+
+.cg-url-steps {
+    margin: 0;
+    padding-left: 1.25rem;
+    color: var(--cg-text-muted) !important;
+}
+
+.cg-url-steps li {
+    margin: 0.45rem 0;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+.cg-url-disclaimer {
+    color: #64748b !important;
+    font-size: 0.82rem;
+    margin-top: 0.75rem;
+    line-height: 1.5;
+}
+
+.cg-tip-item {
+    padding: 0.75rem 1rem !important;
+}
+
+.cg-tip-item p {
+    margin: 0 !important;
+}
+
+/* ---------- Hasil Analisis URL (Scanner & Chatbot) ---------- */
+.cg-websec-section-title {
+    margin-top: 1.5rem;
+}
+
+.cg-websec-card {
+    margin-bottom: 1rem;
+}
+
+.cg-scan-result,
+.cg-websec-result {
+    background: linear-gradient(145deg, rgba(37, 99, 235, 0.1), rgba(17, 24, 39, 0.92));
+    border: 1px solid var(--cg-border);
+    border-radius: var(--cg-radius);
+    padding: 1.25rem 1.5rem;
+    margin: 1rem 0;
+    box-shadow: var(--cg-shadow), 0 0 24px var(--cg-blue-glow);
+    animation: cg-slideUp 0.45s ease-out;
+}
+
+.cg-scan-result-header,
+.cg-websec-result-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.cg-scan-result-header > span:first-child,
+.cg-websec-result-header > span:first-child {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--cg-blue-electric) !important;
+    letter-spacing: 0.3px;
+}
+
+.cg-scan-metrics,
+.cg-websec-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.cg-scan-metric,
+.cg-websec-metric {
+    flex: 1;
+    min-width: 140px;
+    background: rgba(17, 24, 39, 0.6);
+    border: 1px solid var(--cg-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    text-align: center;
+}
+
+.cg-scan-metric-label,
+.cg-websec-metric-label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cg-text-muted) !important;
+    margin-bottom: 0.35rem;
+}
+
+.cg-scan-metric-value,
+.cg-websec-metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--cg-blue-electric) !important;
+}
+
+.cg-scan-risk-label,
+.cg-websec-risk-label {
+    font-size: 0.78rem;
+    color: var(--cg-text-muted) !important;
+    margin-bottom: 0.35rem;
+}
+
+.cg-scan-summary,
+.cg-websec-summary {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cg-border);
+}
+
+.cg-scan-summary-label,
+.cg-websec-summary-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--cg-blue-electric) !important;
+    margin-bottom: 0.5rem;
+}
+
+.cg-scan-summary p,
+.cg-websec-summary p {
+    margin: 0;
+    color: var(--cg-text-primary) !important;
+    font-size: 0.92rem;
+    line-height: 1.55;
+}
+
+.cg-url-checked,
+.cg-websec-url-checked {
+    color: #64748b !important;
+    font-size: 0.8rem;
+    margin-top: 0.75rem;
+    word-break: break-all;
+}
+
 /* ---------- Finding List ---------- */
 .cg-finding {
     padding: 0.5rem 0.75rem;
@@ -485,6 +776,34 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
     .cg-card {
         padding: 1rem;
     }
+
+    .cg-onboarding-card {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .cg-onboarding-title {
+        font-size: 1.25rem;
+    }
+
+    .cg-feature-card {
+        padding: 1rem;
+    }
+
+    .cg-scan-result,
+    .cg-websec-result {
+        padding: 1rem;
+    }
+
+    .cg-scan-result-header,
+    .cg-websec-result-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .cg-scan-metric,
+    .cg-websec-metric {
+        min-width: 100%;
+    }
 }
 
 @media (max-width: 480px) {
@@ -498,5 +817,14 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 
     .cg-section-title {
         font-size: 1.15rem;
+    }
+
+    .cg-scan-metric-value,
+    .cg-websec-metric-value {
+        font-size: 1.25rem;
+    }
+
+    .cg-onboarding-icon {
+        font-size: 2.25rem;
     }
 }
