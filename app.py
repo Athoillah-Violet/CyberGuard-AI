@@ -69,6 +69,11 @@ _LIGHT_THEME_CSS = """
     color: var(--cg-text-primary) !important;
 }
 
+html,
+body {
+    background: #f8fafc !important;
+}
+
 section[data-testid="stSidebar"] {
     background: radial-gradient(500px circle at 30% 0%, rgba(14, 165, 233, 0.12), transparent 55%),
         linear-gradient(180deg, #ffffff 0%, #f1f5ff 100%) !important;
@@ -155,18 +160,18 @@ div[data-testid="stChatInput"] button {
 
 div[data-testid="stBottomBlockContainer"],
 div[data-testid="stBottom"] {
-    background: transparent !important;
+    background: rgba(248, 250, 252, 0.82) !important;
+    border-top: 1px solid var(--cg-border) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
 }
 
 div[data-testid="stBottomBlockContainer"] > div,
 div[data-testid="stBottomBlockContainer"] > div > div,
-div[data-testid="stBottomBlockContainer"] > div > div > div {
+div[data-testid="stBottomBlockContainer"] > div > div > div,
+div[data-testid="stBottom"] > div,
+div[data-testid="stBottom"] > div > div {
     background: transparent !important;
-}
-
-div[data-testid="stBottomBlockContainer"] {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
 }
 
 div[data-testid="stExpander"] details {
