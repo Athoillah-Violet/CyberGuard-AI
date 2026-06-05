@@ -124,6 +124,26 @@ section[data-testid="stSidebar"] {
     background: rgba(255, 255, 255, 0.92) !important;
 }
 
+div[data-testid="stChatInput"] textarea {
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--cg-text-primary) !important;
+    border: 1px solid var(--cg-border) !important;
+}
+
+div[data-testid="stChatInput"] textarea::placeholder {
+    color: var(--cg-text-muted) !important;
+}
+
+div[data-testid="stExpander"] details {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid var(--cg-border) !important;
+    border-radius: 12px !important;
+}
+
+div[data-testid="stExpander"] summary {
+    color: var(--cg-text-primary) !important;
+}
+
 .stButton > button {
     background: linear-gradient(135deg, #0ea5e9, #2563eb) !important;
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.20) !important;
