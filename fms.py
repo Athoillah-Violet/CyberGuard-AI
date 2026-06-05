@@ -6,6 +6,7 @@ Modul analisis keamanan: password checker, URL/phishing detector, dan cyber tips
 import re
 import random
 from typing import Dict, List
+from urllib.parse import urlsplit
 
 
 # ---------------------------------------------------------------------------
@@ -214,6 +215,89 @@ _BRAND_KEYWORDS = [
     "bni", "bri", "tokopedia", "shopee", "grab", "gojek",
 ]
 
+_ADULT_KEYWORDS = [
+    "porn",
+    "porno",
+    "bokep",
+    "xxx",
+    "sex",
+    "adult",
+    "nsfw",
+    "hentai",
+]
+
+_GAMBLING_KEYWORDS = [
+    "judi",
+    "judol",
+    "slot",
+    "casino",
+    "poker",
+    "togel",
+    "bet",
+    "sportsbook",
+]
+
+
+def _extract_url_parts(url: str) -> Dict[str, str]:
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    path = (parts.path or "").lower()
+    query = (parts.query or "").lower()
+    return {"host": host, "path": path, "query": query}
+
+
+def _tokenize_text(text: str) -> List[str]:
+    return [t for t in re.split(r"[^0-9a-z]+", text.lower()) if t]
+
+
+def _token_matches_keyword(token: str, keyword: str) -> bool:
+    if token == keyword:
+        return True
+    if keyword == "sex":
+        return False
+    if keyword == "bet":
+        return token.startswith("bet") and len(token) > 3 and token[3].isdigit()
+    prefix_ok = {
+        "porn",
+        "porno",
+        "bokep",
+        "xxx",
+        "adult",
+        "nsfw",
+        "hentai",
+        "judi",
+        "judol",
+        "slot",
+        "casino",
+        "poker",
+        "togel",
+        "sportsbook",
+    }
+    if keyword in prefix_ok:
+        return token.startswith(keyword) or token.endswith(keyword)
+    return False
+
+
+def _detect_content_risk(url: str) -> Dict[str, List[str]]:
+    parts = _extract_url_parts(url)
+    tokens = _tokenize_text(" ".join([parts["host"], parts["path"], parts["query"]]))
+
+    adult_hits_set = set()
+    gambling_hits_set = set()
+
+    for token in tokens:
+        for kw in _ADULT_KEYWORDS:
+            if _token_matches_keyword(token, kw):
+                adult_hits_set.add(kw)
+        for kw in _GAMBLING_KEYWORDS:
+            if _token_matches_keyword(token, kw):
+                gambling_hits_set.add(kw)
+
+    adult_hits = sorted(adult_hits_set)
+    gambling_hits = sorted(gambling_hits_set)
+
+    return {"adult": adult_hits, "gambling": gambling_hits}
+
 
 def analyze_url(url: str) -> Dict:
     """
@@ -254,6 +338,17 @@ def analyze_url(url: str) -> Dict:
         risk_score += 20
 
     url_lower = url.lower()
+    content_risk = _detect_content_risk(url_lower)
+    if content_risk["adult"] or content_risk["gambling"]:
+        hits: List[str] = []
+        if content_risk["adult"]:
+            hits.append(f"konten dewasa ({', '.join(content_risk['adult'][:5])})")
+        if content_risk["gambling"]:
+            hits.append(f"perjudian/judi online ({', '.join(content_risk['gambling'][:5])})")
+        findings.append(
+            "Indikasi kategori berisiko terdeteksi dari domain/path: " + " dan ".join(hits) + "."
+        )
+        risk_score = max(risk_score, 70)
 
     # Keyword mencurigakan
     found_keywords = [kw for kw in _SUSPICIOUS_KEYWORDS if kw in url_lower]
@@ -322,6 +417,13 @@ def analyze_url(url: str) -> Dict:
     else:
         status = "Safe"
         summary = "URL tidak menunjukkan indikasi phishing yang jelas. Tetap waspada."
+
+    if content_risk["adult"] or content_risk["gambling"]:
+        status = "Dangerous"
+        summary = (
+            "URL terindikasi mengarah ke kategori berisiko (konten dewasa/perjudian). "
+            "Hindari akses, terutama dari perangkat kerja/akun utama."
+        )
 
     if not findings:
         findings.append("Tidak ditemukan indikasi phishing berdasarkan analisis heuristik.")
