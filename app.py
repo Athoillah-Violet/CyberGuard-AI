@@ -158,6 +158,17 @@ div[data-testid="stBottom"] {
     background: transparent !important;
 }
 
+div[data-testid="stBottomBlockContainer"] > div,
+div[data-testid="stBottomBlockContainer"] > div > div,
+div[data-testid="stBottomBlockContainer"] > div > div > div {
+    background: transparent !important;
+}
+
+div[data-testid="stBottomBlockContainer"] {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
 div[data-testid="stExpander"] details {
     background: rgba(255, 255, 255, 0.92) !important;
     border: 1px solid var(--cg-border) !important;
