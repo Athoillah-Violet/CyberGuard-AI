@@ -22,6 +22,15 @@ VALID_PAGES = [
     "Security Tips",
 ]
 
+# Metadata halaman untuk tampilan dekoratif sidebar
+PAGE_META = {
+    "Dashboard": ("🏠", "Dashboard"),
+    "AI Chatbot": ("💬", "AI Chatbot"),
+    "Password Checker": ("🔑", "Password Checker"),
+    "URL Scanner": ("🔗", "URL Scanner"),
+    "Security Tips": ("📚", "Security Tips"),
+}
+
 # ---------------------------------------------------------------------------
 # Konfigurasi Halaman (harus dipanggil pertama oleh Streamlit)
 # ---------------------------------------------------------------------------
@@ -367,11 +376,19 @@ def render_onboarding() -> None:
 
 def render_sidebar() -> str:
     """
-    Merender sidebar navigasi dan mengembalikan halaman yang dipilih.
+    Merender sidebar dengan panel dekoratif dan Quick Tools.
+    Navigasi radio dihapus — halaman aktif diatur via session_state.
 
     Returns:
-        str: Nama halaman aktif dari radio menu.
+        str: Nama halaman aktif saat ini.
     """
+    # Pastikan halaman aktif selalu valid
+    if st.session_state.current_page not in VALID_PAGES:
+        st.session_state.current_page = "Dashboard"
+
+    current_page = st.session_state.current_page
+    page_icon, page_label = PAGE_META.get(current_page, ("🛡️", "Dashboard"))
+
     with st.sidebar:
         # Logo dan branding aplikasi
         st.markdown(
@@ -387,29 +404,56 @@ def render_sidebar() -> str:
 
         st.markdown("---")
 
-        # Menu navigasi utama
-        st.markdown("##### 📍 Navigasi")
-        page = st.radio(
-            "Menu",
-            VALID_PAGES,
-            label_visibility="collapsed",
+        # Panel dekoratif — menggantikan menu radio/checkbox
+        st.markdown(
+            f"""
+            <div class="cg-sidebar-deco">
+                <div class="cg-sidebar-deco-glow"></div>
+                <p class="cg-sidebar-deco-label">Halaman Aktif</p>
+                <div class="cg-sidebar-active-page">
+                    <span class="cg-sidebar-active-icon">{page_icon}</span>
+                    <span class="cg-sidebar-active-text">{page_label}</span>
+                </div>
+                <div class="cg-sidebar-deco-divider"></div>
+                <div class="cg-sidebar-shield-row">
+                    <span class="cg-status-dot cg-status-active"></span>
+                    <span class="cg-sidebar-shield-text">Secure Session Active</span>
+                </div>
+                <div class="cg-sidebar-bars">
+                    <div class="cg-sidebar-bar" style="width:92%;"></div>
+                    <div class="cg-sidebar-bar" style="width:78%;"></div>
+                    <div class="cg-sidebar-bar" style="width:85%;"></div>
+                </div>
+                <p class="cg-sidebar-deco-tagline">
+                    Proteksi digital • Edukasi • Awareness
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
         st.markdown("---")
 
-        # Quick Tools — akses cepat ke fitur populer
+        # Quick Tools — navigasi utama antar halaman
         st.markdown("##### ⚡ Quick Tools")
         qcol1, qcol2 = st.columns(2)
         with qcol1:
+            if st.button("🏠 Home", key="qt_home", use_container_width=True):
+                navigate_to("Dashboard")
+        with qcol2:
             if st.button("💬 Chat", key="qt_chat", use_container_width=True):
                 navigate_to("AI Chatbot")
-        with qcol2:
+
+        qcol3, qcol4 = st.columns(2)
+        with qcol3:
             if st.button("🔑 Pass", key="qt_pass", use_container_width=True):
                 navigate_to("Password Checker")
+        with qcol4:
+            if st.button("🔗 URL", key="qt_url", use_container_width=True):
+                navigate_to("URL Scanner")
 
-        # Tombol URL Scanner ditambahkan sesuai permintaan revisi
-        if st.button("🔗 URL Scan", key="qt_url", use_container_width=True):
-            navigate_to("URL Scanner")
+        if st.button("📚 Tips", key="qt_tips", use_container_width=True):
+            navigate_to("Security Tips")
 
         st.markdown("---")
 
@@ -426,7 +470,7 @@ def render_sidebar() -> str:
             unsafe_allow_html=True,
         )
 
-    return page
+    return current_page
 
 
 # ---------------------------------------------------------------------------
@@ -850,21 +894,15 @@ def main() -> None:
     """
     Entry point aplikasi — onboarding, sidebar, dan routing halaman.
     """
+    # Sidebar mengembalikan halaman aktif dari session_state
     page = render_sidebar()
-
-    # Override halaman jika navigasi programmatic (Quick Tools, dashboard, onboarding)
-    if st.session_state.get("current_page") and st.session_state.current_page != page:
-        override = st.session_state.current_page
-        if override in VALID_PAGES:
-            page = override
-            st.session_state.current_page = page
 
     # Tampilkan onboarding sekali per sesi sebelum konten utama
     if not st.session_state.onboarding_done:
         render_onboarding()
         return
 
-    # Render halaman sesuai menu sidebar
+    # Render halaman sesuai navigasi Quick Tools / dashboard / onboarding
     pages = {
         "Dashboard": render_dashboard,
         "AI Chatbot": render_chatbot,
