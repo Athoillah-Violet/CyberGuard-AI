@@ -5,8 +5,8 @@ Modul analisis keamanan: password checker, URL/phishing detector, dan cyber tips
 
 import re
 import random
-from typing import Dict, List
-from urllib.parse import urlsplit
+from typing import Dict, List, Optional
+from urllib.parse import parse_qs, unquote, urlsplit
 
 
 # ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ _SUSPICIOUS_KEYWORDS = [
 
 _SUSPICIOUS_TLDS = [
     ".tk", ".ml", ".ga", ".cf", ".gq", ".xyz", ".top", ".work",
-    ".click", ".link", ".buzz", ".icu",
+    ".click", ".link", ".buzz", ".icu", ".cyou",
 ]
 
 _BRAND_KEYWORDS = [
@@ -224,6 +224,8 @@ _ADULT_KEYWORDS = [
     "adult",
     "nsfw",
     "hentai",
+    "doujin",
+    "jav",
 ]
 
 _GAMBLING_KEYWORDS = [
@@ -255,6 +257,8 @@ def _token_matches_keyword(token: str, keyword: str) -> bool:
         return True
     if keyword == "sex":
         return False
+    if keyword == "jav":
+        return token.startswith("jav") and not token.startswith("java") and len(token) > 3
     if keyword == "bet":
         return token.startswith("bet") and len(token) > 3 and token[3].isdigit()
     prefix_ok = {
@@ -265,6 +269,7 @@ def _token_matches_keyword(token: str, keyword: str) -> bool:
         "adult",
         "nsfw",
         "hentai",
+        "doujin",
         "judi",
         "judol",
         "slot",
@@ -276,6 +281,18 @@ def _token_matches_keyword(token: str, keyword: str) -> bool:
     if keyword in prefix_ok:
         return token.startswith(keyword) or token.endswith(keyword)
     return False
+
+
+def _unwrap_google_redirect(url: str) -> Optional[str]:
+    parts = urlsplit(url)
+    host = (parts.hostname or "").lower()
+    path = parts.path or ""
+    if host in {"google.com", "www.google.com"} and path == "/url":
+        qs = parse_qs(parts.query)
+        candidates = qs.get("url") or qs.get("q") or []
+        if candidates and candidates[0]:
+            return unquote(candidates[0]).strip()
+    return None
 
 
 def _detect_content_risk(url: str) -> Dict[str, List[str]]:
@@ -331,6 +348,15 @@ def analyze_url(url: str) -> Dict:
 
     findings: List[str] = []
     risk_score = 0
+    redirect_target = _unwrap_google_redirect(url)
+    if redirect_target:
+        findings.append(
+            "URL terdeteksi sebagai redirect Google. Menganalisis target asli pada parameter link."
+        )
+        risk_score += 5
+        url = redirect_target
+        if not url.startswith(("http://", "https://")):
+            url = "https://" + url
 
     # Cek HTTPS
     if not url.lower().startswith("https://"):
@@ -411,7 +437,7 @@ def analyze_url(url: str) -> Dict:
     if risk_score >= 60:
         status = "Dangerous"
         summary = "URL ini berpotensi berbahaya. Jangan buka atau masukkan data pribadi."
-    elif risk_score >= 30:
+    elif risk_score > 0:
         status = "Suspicious"
         summary = "URL menunjukkan beberapa indikasi mencurigakan. Verifikasi sebelum mengakses."
     else:
